@@ -69,6 +69,7 @@ export const listing = pgTable('listing', {
   category: text('category').notNull(),
   price: numeric('price', { precision: 10, scale: 2 }).notNull(),
   location: text('location').notNull(),
+  imagePath: text('imagePath'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 

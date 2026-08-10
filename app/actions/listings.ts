@@ -2,7 +2,8 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { listing } from '@/lib/db/schema'
+import { listing, user } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
@@ -15,6 +16,7 @@ export async function createListing(formData: FormData) {
   const category = String(formData.get('category') ?? '').trim()
   const location = String(formData.get('location') ?? '').trim()
   const price = Number(formData.get('price'))
+  const imagePath = String(formData.get('imagePath') ?? '').trim() || null
 
   if (!title || !description || !category || !location || !Number.isFinite(price) || price < 0) {
     throw new Error('Completa todos los campos correctamente.')
@@ -28,11 +30,27 @@ export async function createListing(formData: FormData) {
     category,
     price: price.toFixed(2),
     location,
+    imagePath,
   })
 
   revalidatePath('/')
 }
 
 export async function getListings() {
-  return db.select().from(listing).orderBy(listing.createdAt)
+  const rows = await db
+    .select({
+      id: listing.id,
+      title: listing.title,
+      description: listing.description,
+      category: listing.category,
+      price: listing.price,
+      location: listing.location,
+      imagePath: listing.imagePath,
+      publisherName: user.name,
+    })
+    .from(listing)
+    .leftJoin(user, eq(listing.userId, user.id))
+    .orderBy(listing.createdAt)
+
+  return rows.map((row) => ({ ...row, publisherName: row.publisherName ?? 'Estudiante' }))
 }
