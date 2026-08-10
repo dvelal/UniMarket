@@ -44,7 +44,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
       <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-5xl items-center justify-center gap-12">
         <section className="hidden max-w-sm flex-col gap-5 lg:flex">
           <Link href="/" className="font-mono text-sm font-bold uppercase tracking-[0.18em] text-primary">
-            Mercado UNJBG
+            UniMarket
           </Link>
           <h1 className="text-balance text-4xl font-semibold tracking-tight text-foreground">
             Tu comunidad universitaria, en un solo lugar.
@@ -57,7 +57,7 @@ export function AuthForm({ mode }: { mode: 'sign-in' | 'sign-up' }) {
         <Card className="w-full max-w-md border-border/70 bg-card p-6 shadow-xl shadow-primary/5 sm:p-8">
         <div className="mb-6 flex flex-col gap-2">
           <Link href="/" className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary lg:hidden">
-            Mercado UNJBG
+            UniMarket
           </Link>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground">
             {isSignUp ? 'Crea tu cuenta' : 'Bienvenido de vuelta'}

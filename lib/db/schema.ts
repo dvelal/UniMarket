@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -61,8 +61,19 @@ export const verification = pgTable('verification', {
 // foreign keys or referential integrity; FK constraints make iterating on the
 // schema harder.
 //
+export const listing = pgTable('listing', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  category: text('category').notNull(),
+  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
+  location: text('location').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
 // Example:
-//
+
 // import { serial } from "drizzle-orm/pg-core"
 //
 // export const todos = pgTable("todos", {

@@ -7,7 +7,7 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'Mercado Estudiantil UNJBG',
+  title: 'UniMarket',
   description: 'Descubre productos, servicios y emprendimientos de la comunidad UNJBG.',
   generator: 'v0.app',
   icons: {
