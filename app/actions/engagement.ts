@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { favorite, listing, notification, review } from '@/lib/db/schema'
+import { favorite, listing, notification, review, user } from '@/lib/db/schema'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -38,6 +38,16 @@ export async function getEngagement(listingIds: string[], userId: string) {
   const ratings = await db.select({ listingId: review.listingId, average: sql<number>`avg(${review.rating})`, count: sql<number>`count(*)` }).from(review).where(sql`${review.listingId} IN ${listingIds}`).groupBy(review.listingId)
   const favoriteIds = new Set(favorites.map((item) => item.listingId))
   return listingIds.map((id) => ({ listingId: id, isFavorite: favoriteIds.has(id), averageRating: Number(ratings.find((item) => item.listingId === id)?.average ?? 0), reviewCount: Number(ratings.find((item) => item.listingId === id)?.count ?? 0) }))
+}
+
+export async function getReviews(listingId: string) {
+  return db.select({ id: review.id, rating: review.rating, comment: review.comment, createdAt: review.createdAt, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
+}
+
+export async function markNotificationRead(id: string) {
+  const user = await currentUser()
+  await db.update(notification).set({ readAt: new Date() }).where(and(eq(notification.id, id), eq(notification.userId, user.id)))
+  revalidatePath('/')
 }
 
 export async function getNotifications(userId: string) {
