@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { favorite, listing, notification, review, user } from '@/lib/db/schema'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, or, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
@@ -27,6 +27,8 @@ export async function addReview(listingId: string, rating: number, comment: stri
   const product = await db.select({ ownerId: listing.userId, title: listing.title }).from(listing).where(eq(listing.id, listingId)).limit(1)
   if (!product[0]) throw new Error('Publicación no encontrada.')
   if (product[0].ownerId === user.id) throw new Error('No puedes calificar tu propia publicación.')
+  const previous = await db.select({ id: review.id }).from(review).where(and(eq(review.listingId, listingId), eq(review.userId, user.id))).limit(1)
+  if (previous.length) throw new Error('Ya has dejado una reseña para esta publicación. Puedes editarla desde Reseñas.')
   await db.insert(review).values({ id: crypto.randomUUID(), listingId, userId: user.id, authorId: user.id, rating: String(rating), comment: comment.trim().slice(0, 500) })
   await db.insert(notification).values({ id: crypto.randomUUID(), userId: product[0].ownerId, type: 'review', title: 'Nueva reseña', message: `${user.name ?? 'Un estudiante'} calificó ${product[0].title}.` })
   revalidatePath('/')
@@ -43,14 +45,14 @@ export async function getEngagement(listingIds: string[], userId: string) {
 export async function updateReview(reviewId: string, rating: number, comment: string) {
   const current = await currentUser()
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error('La calificación debe estar entre 1 y 5 estrellas.')
-  const updated = await db.update(review).set({ rating: String(rating), comment: comment.trim().slice(0, 500) || null }).where(and(eq(review.id, reviewId), eq(review.authorId, current.id))).returning({ id: review.id })
+  const updated = await db.update(review).set({ rating: String(rating), comment: comment.trim().slice(0, 500) || null }).where(and(eq(review.id, reviewId), or(eq(review.authorId, current.id), eq(review.userId, current.id)))).returning({ id: review.id })
   if (!updated.length) throw new Error('No puedes editar esta reseña.')
   revalidatePath('/')
 }
 
 export async function deleteReview(reviewId: string) {
   const current = await currentUser()
-  const deleted = await db.delete(review).where(and(eq(review.id, reviewId), eq(review.authorId, current.id))).returning({ id: review.id })
+  const deleted = await db.delete(review).where(and(eq(review.id, reviewId), or(eq(review.authorId, current.id), eq(review.userId, current.id)))).returning({ id: review.id })
   if (!deleted.length) throw new Error('No puedes eliminar esta reseña.')
   revalidatePath('/')
 }
