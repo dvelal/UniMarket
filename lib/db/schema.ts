@@ -61,6 +61,32 @@ export const verification = pgTable('verification', {
 // foreign keys or referential integrity; FK constraints make iterating on the
 // schema harder.
 //
+export const favorite = pgTable('favorite', {
+  id: text('id').primaryKey(),
+  listingId: text('listingId').notNull(),
+  userId: text('userId').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const review = pgTable('review', {
+  id: text('id').primaryKey(),
+  listingId: text('listingId').notNull(),
+  userId: text('userId').notNull(),
+  rating: text('rating').notNull(),
+  comment: text('comment'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const notification = pgTable('notification', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull(),
+  type: text('type').notNull(),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  readAt: timestamp('readAt'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
 export const listing = pgTable('listing', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull(),
