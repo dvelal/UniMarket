@@ -72,6 +72,7 @@ export const review = pgTable('review', {
   id: text('id').primaryKey(),
   listingId: text('listingId').notNull(),
   userId: text('userId').notNull(),
+  authorId: text('authorId'),
   rating: text('rating').notNull(),
   comment: text('comment'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),

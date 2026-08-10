@@ -27,7 +27,7 @@ export async function addReview(listingId: string, rating: number, comment: stri
   const product = await db.select({ ownerId: listing.userId, title: listing.title }).from(listing).where(eq(listing.id, listingId)).limit(1)
   if (!product[0]) throw new Error('Publicación no encontrada.')
   if (product[0].ownerId === user.id) throw new Error('No puedes calificar tu propia publicación.')
-  await db.insert(review).values({ id: crypto.randomUUID(), listingId, userId: user.id, rating: String(rating), comment: comment.trim().slice(0, 500) })
+  await db.insert(review).values({ id: crypto.randomUUID(), listingId, userId: user.id, authorId: user.id, rating: String(rating), comment: comment.trim().slice(0, 500) })
   await db.insert(notification).values({ id: crypto.randomUUID(), userId: product[0].ownerId, type: 'review', title: 'Nueva reseña', message: `${user.name ?? 'Un estudiante'} calificó ${product[0].title}.` })
   revalidatePath('/')
 }
@@ -40,8 +40,15 @@ export async function getEngagement(listingIds: string[], userId: string) {
   return listingIds.map((id) => ({ listingId: id, isFavorite: favoriteIds.has(id), averageRating: Number(ratings.find((item) => item.listingId === id)?.average ?? 0), reviewCount: Number(ratings.find((item) => item.listingId === id)?.count ?? 0) }))
 }
 
+export async function deleteReview(reviewId: string) {
+  const current = await currentUser()
+  const deleted = await db.delete(review).where(and(eq(review.id, reviewId), eq(review.authorId, current.id))).returning({ id: review.id })
+  if (!deleted.length) throw new Error('No puedes eliminar esta reseña.')
+  revalidatePath('/')
+}
+
 export async function getReviews(listingId: string) {
-  return db.select({ id: review.id, rating: review.rating, comment: review.comment, createdAt: review.createdAt, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
+  return db.select({ id: review.id, rating: review.rating, comment: review.comment, createdAt: review.createdAt, authorId: review.authorId, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
 }
 
 export async function markNotificationRead(id: string) {
