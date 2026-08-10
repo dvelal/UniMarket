@@ -40,6 +40,14 @@ export async function getEngagement(listingIds: string[], userId: string) {
   return listingIds.map((id) => ({ listingId: id, isFavorite: favoriteIds.has(id), averageRating: Number(ratings.find((item) => item.listingId === id)?.average ?? 0), reviewCount: Number(ratings.find((item) => item.listingId === id)?.count ?? 0) }))
 }
 
+export async function updateReview(reviewId: string, rating: number, comment: string) {
+  const current = await currentUser()
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error('La calificación debe estar entre 1 y 5 estrellas.')
+  const updated = await db.update(review).set({ rating: String(rating), comment: comment.trim().slice(0, 500) || null }).where(and(eq(review.id, reviewId), eq(review.authorId, current.id))).returning({ id: review.id })
+  if (!updated.length) throw new Error('No puedes editar esta reseña.')
+  revalidatePath('/')
+}
+
 export async function deleteReview(reviewId: string) {
   const current = await currentUser()
   const deleted = await db.delete(review).where(and(eq(review.id, reviewId), eq(review.authorId, current.id))).returning({ id: review.id })
