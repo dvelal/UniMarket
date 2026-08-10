@@ -1,6 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { authClient } from '@/lib/auth-client'
 import {
   Bell,
   BookOpen,
@@ -51,6 +54,8 @@ const products: Product[] = [
 const categories = ['Todo', 'Comida', 'Apuntes', 'Moda', 'Servicios', 'Regalos']
 
 export function MarketplaceDashboard() {
+  const router = useRouter()
+  const { data: session, isPending } = authClient.useSession()
   const [activeCategory, setActiveCategory] = useState('Todo')
   const [query, setQuery] = useState('')
   const [isEntrepreneur, setIsEntrepreneur] = useState(false)
@@ -84,7 +89,14 @@ export function MarketplaceDashboard() {
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Busca productos, servicios o emprendimientos..." className="h-10 w-full rounded-xl border border-input bg-muted/40 pl-10 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
           </div>
           <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Notificaciones"><Bell data-icon="inline-start" /><span className="absolute right-1 top-1 size-2 rounded-full bg-accent" /></button>
-          <button className="hidden items-center gap-2 rounded-xl border border-border px-2 py-1.5 text-left sm:flex"><span className="flex size-8 items-center justify-center rounded-full bg-accent/15 text-sm font-bold text-accent-foreground">LM</span><span className="hidden text-xs font-semibold lg:block">Lucía M.</span><ChevronDown className="text-muted-foreground" data-icon="inline-end" /></button>
+          {!isPending && session?.user ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-2 rounded-xl border border-border px-2 py-1.5 text-left sm:flex"><span className="flex size-8 items-center justify-center rounded-full bg-accent/15 text-sm font-bold text-accent-foreground">{session.user.name.slice(0, 2).toUpperCase()}</span><span className="hidden max-w-28 truncate text-xs font-semibold lg:block">{session.user.name}</span><ChevronDown className="text-muted-foreground" data-icon="inline-end" /></div>
+              <button onClick={async () => { await authClient.signOut(); router.push('/sign-in'); router.refresh() }} className="rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Cerrar sesión">Salir</button>
+            </div>
+          ) : (
+            <Link href="/sign-in" className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">Ingresar</Link>
+          )}
         </div>
         <div className="mx-auto block max-w-[1440px] px-4 pb-3 md:hidden"><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" data-icon="inline-start" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Busca en el mercado..." className="h-10 w-full rounded-xl border border-input bg-muted/40 pl-10 pr-4 text-sm outline-none" /></div></div>
       </header>
@@ -101,7 +113,7 @@ export function MarketplaceDashboard() {
         </aside>
 
         <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-          <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-accent">Martes, 18 de junio</p><h1 className="text-3xl font-black tracking-tight text-primary sm:text-4xl">Hola, Lucía <span className="text-accent">.</span></h1><p className="mt-2 text-sm text-muted-foreground">Lo mejor de tu comunidad universitaria, en un solo lugar.</p></div><div className="flex rounded-xl border border-border bg-card p-1 text-xs font-bold"><button onClick={() => setIsEntrepreneur(false)} className={`rounded-lg px-3 py-2 transition ${!isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Comprar</button><button onClick={() => setIsEntrepreneur(true)} className={`rounded-lg px-3 py-2 transition ${isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Emprender</button></div></div>
+          <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-accent">Martes, 18 de junio</p><h1 className="text-3xl font-black tracking-tight text-primary sm:text-4xl">Hola, {session?.user?.name?.split(' ')[0] ?? 'estudiante'} <span className="text-accent">.</span></h1><p className="mt-2 text-sm text-muted-foreground">Lo mejor de tu comunidad universitaria, en un solo lugar.</p></div><div className="flex rounded-xl border border-border bg-card p-1 text-xs font-bold"><button onClick={() => setIsEntrepreneur(false)} className={`rounded-lg px-3 py-2 transition ${!isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Comprar</button><button onClick={() => setIsEntrepreneur(true)} className={`rounded-lg px-3 py-2 transition ${isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Emprender</button></div></div>
           {isEntrepreneur ? <EntrepreneurView /> : <>
             <div className="mb-8 grid gap-4 sm:grid-cols-3"><StatCard label="Publicaciones activas" value="2,480" detail="+12% esta semana" icon={Store} /><StatCard label="Emprendimientos" value="186" detail="de estudiantes UNJBG" icon={Sparkles} /><StatCard label="Compras realizadas" value="1,204" detail="en nuestra comunidad" icon={ShoppingBag} /></div>
             <div className="mb-7 flex items-center justify-between gap-3"><div><h2 className="text-xl font-black tracking-tight text-primary">Encuentra algo increíble</h2><p className="mt-1 text-sm text-muted-foreground">Explora lo que tus compañeros están creando.</p></div><button className="hidden items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-muted sm:flex"><SlidersHorizontal data-icon="inline-start" />Más filtros</button></div>
