@@ -58,7 +58,7 @@ export async function deleteReview(reviewId: string) {
 }
 
 export async function getReviews(listingId: string) {
-  return db.select({ id: review.id, rating: review.rating, comment: review.comment, createdAt: review.createdAt, authorId: review.authorId, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
+  return db.select({ id: review.id, rating: review.rating, comment: review.comment, createdAt: review.createdAt, authorId: sql<string>`coalesce(${review.authorId}, ${review.userId})`, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
 }
 
 export async function markNotificationRead(id: string) {

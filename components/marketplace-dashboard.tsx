@@ -22,7 +22,7 @@ import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } 
 
 type Listing = { id: string; title: string; description: string; category: string; price: string; location: string; imagePath: string | null; publisherName: string; publisherId: string; serviceDays: string; serviceStart: string; serviceEnd: string }
 type Engagement = { listingId: string; isFavorite: boolean; averageRating: number; reviewCount: number }
-type Review = { id: string; rating: string; comment: string | null; createdAt: Date; authorId: string | null; authorName: string }
+type Review = { id: string; rating: string; comment: string | null; createdAt: Date; authorId: string; authorName: string }
 type Notification = { id: string; title: string; message: string; type: string; readAt: Date | null; createdAt: Date }
 const categories = ['Todo', 'Comida', 'Servicios', 'Tecnología', 'Moda', 'Otros']
 const serviceDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
