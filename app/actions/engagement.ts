@@ -50,6 +50,12 @@ export async function markNotificationRead(id: string) {
   revalidatePath('/')
 }
 
+export async function markAllNotificationsRead() {
+  const user = await currentUser()
+  await db.update(notification).set({ readAt: new Date() }).where(and(eq(notification.userId, user.id), sql`${notification.readAt} IS NULL`))
+  revalidatePath('/')
+}
+
 export async function getNotifications(userId: string) {
   return db.select().from(notification).where(eq(notification.userId, userId)).orderBy(desc(notification.createdAt)).limit(20)
 }
