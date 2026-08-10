@@ -91,7 +91,7 @@ export function MarketplaceDashboard() {
           <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Notificaciones"><Bell data-icon="inline-start" /><span className="absolute right-1 top-1 size-2 rounded-full bg-accent" /></button>
           {!isPending && session?.user ? (
             <div className="flex items-center gap-2">
-              <div className="hidden items-center gap-2 rounded-xl border border-border px-2 py-1.5 text-left sm:flex"><span className="flex size-8 items-center justify-center rounded-full bg-accent/15 text-sm font-bold text-accent-foreground">ES</span><span className="hidden max-w-28 truncate text-xs font-semibold lg:block">Estudiante</span><ChevronDown className="text-muted-foreground" data-icon="inline-end" /></div>
+              <div className="hidden items-center gap-2 rounded-xl border border-border px-2 py-1.5 text-left sm:flex"><span className="flex size-8 items-center justify-center rounded-full bg-accent/15 text-sm font-bold text-accent-foreground">{getInitials(session.user.name)}</span><span className="hidden max-w-28 truncate text-xs font-semibold lg:block">{session.user.name}</span><ChevronDown className="text-muted-foreground" data-icon="inline-end" /></div>
               <button onClick={async () => { await authClient.signOut(); router.push('/sign-in'); router.refresh() }} className="rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Cerrar sesión">Cerrar sesión</button>
             </div>
           ) : (
@@ -113,7 +113,7 @@ export function MarketplaceDashboard() {
         </aside>
 
         <section className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-          <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-accent">Martes, 18 de junio</p><h1 className="text-3xl font-black tracking-tight text-primary sm:text-4xl">Hola, estudiante <span className="text-accent">.</span></h1><p className="mt-2 text-sm text-muted-foreground">Lo mejor de tu comunidad universitaria, en un solo lugar.</p></div><div className="flex rounded-xl border border-border bg-card p-1 text-xs font-bold"><button onClick={() => setIsEntrepreneur(false)} className={`rounded-lg px-3 py-2 transition ${!isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Comprar</button><button onClick={() => setIsEntrepreneur(true)} className={`rounded-lg px-3 py-2 transition ${isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Emprender</button></div></div>
+          <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-accent">Martes, 18 de junio</p><h1 className="text-3xl font-black tracking-tight text-primary sm:text-4xl">Hola, {session?.user?.name?.split(' ')[0] ?? 'estudiante'} <span className="text-accent">.</span></h1><p className="mt-2 text-sm text-muted-foreground">Lo mejor de tu comunidad universitaria, en un solo lugar.</p></div><div className="flex rounded-xl border border-border bg-card p-1 text-xs font-bold"><button onClick={() => setIsEntrepreneur(false)} className={`rounded-lg px-3 py-2 transition ${!isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Comprar</button><button onClick={() => setIsEntrepreneur(true)} className={`rounded-lg px-3 py-2 transition ${isEntrepreneur ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Emprender</button></div></div>
           {isEntrepreneur ? <EntrepreneurView /> : <>
             <div className="mb-8 grid gap-4 sm:grid-cols-3"><StatCard label="Publicaciones activas" value="2,480" detail="+12% esta semana" icon={Store} /><StatCard label="Emprendimientos" value="186" detail="de estudiantes UNJBG" icon={Sparkles} /><StatCard label="Compras realizadas" value="1,204" detail="en nuestra comunidad" icon={ShoppingBag} /></div>
             <div className="mb-7 flex items-center justify-between gap-3"><div><h2 className="text-xl font-black tracking-tight text-primary">Encuentra algo increíble</h2><p className="mt-1 text-sm text-muted-foreground">Explora lo que tus compañeros están creando.</p></div><button className="hidden items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-muted sm:flex"><SlidersHorizontal data-icon="inline-start" />Más filtros</button></div>
@@ -125,6 +125,15 @@ export function MarketplaceDashboard() {
       {selectedSeller && <SellerDialog product={selectedSeller} onClose={() => setSelectedSeller(null)} />}
     </main>
   )
+}
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 }
 
 function StatCard({ label, value, detail, icon: Icon }: { label: string; value: string; detail: string; icon: typeof Store }) { return <div className="rounded-2xl border border-border bg-card p-4 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-xs font-medium text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-black tracking-tight text-primary">{value}</p><p className="mt-1 text-[11px] font-semibold text-accent-foreground">{detail}</p></div><div className="rounded-lg bg-muted p-2 text-primary"><Icon data-icon="inline-start" /></div></div></div> }
