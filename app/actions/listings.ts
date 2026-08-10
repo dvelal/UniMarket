@@ -72,6 +72,15 @@ export async function updateListing(id: string, formData: FormData) {
   revalidatePath('/')
 }
 
+export async function toggleListingStatus(id: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) throw new Error('Unauthorized')
+  const [item] = await db.select({ status: listing.status }).from(listing).where(and(eq(listing.id, id), eq(listing.userId, session.user.id))).limit(1)
+  if (!item) throw new Error('No puedes modificar esta publicación.')
+  await db.update(listing).set({ status: item.status === 'active' ? 'paused' : 'active' }).where(and(eq(listing.id, id), eq(listing.userId, session.user.id)))
+  revalidatePath('/')
+}
+
 export async function deleteListing(id: string) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) throw new Error('Unauthorized')
@@ -90,6 +99,8 @@ export async function getListings() {
       price: listing.price,
       location: listing.location,
       imagePath: listing.imagePath,
+      status: listing.status,
+      createdAt: listing.createdAt,
       publisherName: user.name,
       publisherId: listing.userId,
       serviceDays: listing.serviceDays,

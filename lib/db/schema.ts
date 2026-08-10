@@ -97,6 +97,7 @@ export const listing = pgTable('listing', {
   price: numeric('price', { precision: 10, scale: 2 }).notNull(),
   location: text('location').notNull(),
   imagePath: text('imagePath'),
+  status: text('status').notNull().default('active'),
   serviceDays: text('serviceDays').notNull().default('[]'),
   serviceStart: text('serviceStart').notNull().default('09:00'),
   serviceEnd: text('serviceEnd').notNull().default('18:00'),
