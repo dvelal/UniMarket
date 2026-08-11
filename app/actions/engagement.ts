@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { favorite, listing, notification, review, user } from '@/lib/db/schema'
-import { and, desc, eq, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
@@ -37,8 +37,8 @@ export async function addReview(listingId: string, rating: number, comment: stri
 
 export async function getEngagement(listingIds: string[], userId: string) {
   if (!listingIds.length) return []
-  const favorites = await db.select({ listingId: favorite.listingId }).from(favorite).where(and(eq(favorite.userId, userId), sql`${favorite.listingId} IN ${listingIds}`))
-  const ratings = await db.select({ listingId: review.listingId, average: sql<number>`avg(${review.rating})`, count: sql<number>`count(*)` }).from(review).where(sql`${review.listingId} IN ${listingIds}`).groupBy(review.listingId)
+  const favorites = await db.select({ listingId: favorite.listingId }).from(favorite).where(and(eq(favorite.userId, userId), inArray(favorite.listingId, listingIds)))
+  const ratings = await db.select({ listingId: review.listingId, average: sql<number>`avg(${review.rating})`, count: sql<number>`count(*)` }).from(review).where(inArray(review.listingId, listingIds)).groupBy(review.listingId)
   const favoriteIds = new Set(favorites.map((item) => item.listingId))
   return listingIds.map((id) => ({ listingId: id, isFavorite: favoriteIds.has(id), averageRating: Number(ratings.find((item) => item.listingId === id)?.average ?? 0), reviewCount: Number(ratings.find((item) => item.listingId === id)?.count ?? 0) }))
 }
