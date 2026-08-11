@@ -73,6 +73,24 @@ export async function respondToReview(reviewId: string, response: string) {
   revalidatePath('/')
 }
 
+export async function editReviewResponse(reviewId: string, response: string) {
+  const owner = await currentUser()
+  const cleanResponse = response.trim().slice(0, 500)
+  if (!cleanResponse) throw new Error('La respuesta no puede estar vacía.')
+  const ownedReview = await db.select({ reviewId: review.id, listingId: review.listingId, userId: listing.userId }).from(review).innerJoin(listing, eq(review.listingId, listing.id)).where(and(eq(review.id, reviewId), eq(listing.userId, owner.id))).limit(1)
+  if (!ownedReview[0]) throw new Error('No puedes editar esta respuesta.')
+  await db.update(review).set({ response: cleanResponse }).where(eq(review.id, reviewId))
+  revalidatePath('/')
+}
+
+export async function deleteReviewResponse(reviewId: string) {
+  const owner = await currentUser()
+  const ownedReview = await db.select({ reviewId: review.id, listingId: review.listingId, userId: listing.userId }).from(review).innerJoin(listing, eq(review.listingId, listing.id)).where(and(eq(review.id, reviewId), eq(listing.userId, owner.id))).limit(1)
+  if (!ownedReview[0]) throw new Error('No puedes eliminar esta respuesta.')
+  await db.update(review).set({ response: null }).where(eq(review.id, reviewId))
+  revalidatePath('/')
+}
+
 export async function markNotificationRead(id: string) {
   const user = await currentUser()
   await db.update(notification).set({ readAt: new Date() }).where(and(eq(notification.id, id), eq(notification.userId, user.id)))

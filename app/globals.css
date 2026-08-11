@@ -53,7 +53,24 @@
   --radius: 0.75rem;
 }
 
-.dark { color-scheme: dark; }
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.16 0.025 245);
+  --foreground: oklch(0.94 0.018 235);
+  --card: oklch(0.2 0.03 245);
+  --card-foreground: oklch(0.94 0.018 235);
+  --popover: oklch(0.2 0.03 245);
+  --popover-foreground: oklch(0.94 0.018 235);
+  --primary: oklch(0.78 0.13 205);
+  --primary-foreground: oklch(0.16 0.025 245);
+  --secondary: oklch(0.27 0.035 245);
+  --secondary-foreground: oklch(0.94 0.018 235);
+  --muted: oklch(0.25 0.03 245);
+  --muted-foreground: oklch(0.7 0.035 235);
+  --border: oklch(0.34 0.035 245);
+  --input: oklch(0.34 0.035 245);
+  --ring: oklch(0.78 0.13 205);
+}
 
 @layer base {
   * { @apply border-border outline-ring/50; }
