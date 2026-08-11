@@ -75,6 +75,7 @@ export const review = pgTable('review', {
   authorId: text('authorId'),
   rating: text('rating').notNull(),
   comment: text('comment'),
+  response: text('response'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })
 
@@ -84,6 +85,8 @@ export const notification = pgTable('notification', {
   type: text('type').notNull(),
   title: text('title').notNull(),
   message: text('message').notNull(),
+  listingId: text('listing_id'),
+  reviewId: text('review_id'),
   readAt: timestamp('readAt'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 })

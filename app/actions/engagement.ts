@@ -29,8 +29,9 @@ export async function addReview(listingId: string, rating: number, comment: stri
   if (product[0].ownerId === user.id) throw new Error('No puedes calificar tu propia publicación.')
   const previous = await db.select({ id: review.id }).from(review).where(and(eq(review.listingId, listingId), eq(review.userId, user.id))).limit(1)
   if (previous.length) throw new Error('Ya has dejado una reseña para esta publicación. Puedes editarla desde Reseñas.')
-  await db.insert(review).values({ id: crypto.randomUUID(), listingId, userId: user.id, authorId: user.id, rating: String(rating), comment: comment.trim().slice(0, 500) })
-  await db.insert(notification).values({ id: crypto.randomUUID(), userId: product[0].ownerId, type: 'review', title: 'Nueva reseña', message: `${user.name ?? 'Un estudiante'} calificó ${product[0].title}.` })
+  const reviewId = crypto.randomUUID()
+  await db.insert(review).values({ id: reviewId, listingId, userId: user.id, authorId: user.id, rating: String(rating), comment: comment.trim().slice(0, 500) })
+  await db.insert(notification).values({ id: crypto.randomUUID(), userId: product[0].ownerId, type: 'review', title: 'Nueva reseña', message: `${user.name ?? 'Un estudiante'} calificó ${product[0].title}.`, listingId, reviewId })
   revalidatePath('/')
 }
 
@@ -58,7 +59,18 @@ export async function deleteReview(reviewId: string) {
 }
 
 export async function getReviews(listingId: string) {
-  return db.select({ id: review.id, rating: review.rating, comment: review.comment, createdAt: review.createdAt, authorId: sql<string>`coalesce(${review.authorId}, ${review.userId})`, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
+  return db.select({ id: review.id, rating: review.rating, comment: review.comment, response: review.response, createdAt: review.createdAt, authorId: sql<string>`coalesce(${review.authorId}, ${review.userId})`, authorName: sql<string>`coalesce(${user.name}, 'Estudiante')` }).from(review).leftJoin(user, eq(review.userId, user.id)).where(eq(review.listingId, listingId)).orderBy(desc(review.createdAt))
+}
+
+export async function respondToReview(reviewId: string, response: string) {
+  const owner = await currentUser()
+  const cleanResponse = response.trim().slice(0, 500)
+  if (!cleanResponse) throw new Error('La respuesta no puede estar vacía.')
+  const ownedReview = await db.select({ reviewId: review.id, listingId: review.listingId, authorId: review.userId, title: listing.title }).from(review).innerJoin(listing, eq(review.listingId, listing.id)).where(and(eq(review.id, reviewId), eq(listing.userId, owner.id))).limit(1)
+  if (!ownedReview[0]) throw new Error('No puedes responder esta reseña.')
+  await db.update(review).set({ response: cleanResponse }).where(eq(review.id, reviewId))
+  await db.insert(notification).values({ id: crypto.randomUUID(), userId: ownedReview[0].authorId, type: 'review_response', title: 'Respuesta a tu reseña', message: `El dueño respondió a tu reseña de ${ownedReview[0].title}.`, listingId: ownedReview[0].listingId, reviewId })
+  revalidatePath('/')
 }
 
 export async function markNotificationRead(id: string) {
