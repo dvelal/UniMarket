@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -141,6 +141,11 @@ export function MarketplaceDashboard({
   const [reviewing, setReviewing] = useState<Listing | null>(null);
   const [viewingReviews, setViewingReviews] = useState<Listing | null>(null);
   const [details, setDetails] = useState<Listing | null>(null);
+  const [orderOpen, setOrderOpen] = useState(false);
+  const [orderListing, setOrderListing] = useState<Listing | null>(null);
+  const [orderQuantity, setOrderQuantity] = useState<number>(1);
+  const [orderPhone, setOrderPhone] = useState<string>((session?.user as any)?.phone ?? '');
+  const [orderNote, setOrderNote] = useState<string>('');
   const [deletingReview, setDeletingReview] = useState<Review | null>(null);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [respondingTo, setRespondingTo] = useState<Review | null>(null);
@@ -332,7 +337,8 @@ const filtered = listings.filter((item) => {
     });
   }
 
-  const unreadCount = notifications.filter((item) => !item.readAt).length;
+  const [notificationsState, setNotificationsState] = useState<Notification[]>(notifications);
+  const unreadCount = notificationsState.filter((item) => !item.readAt).length;
   const ownListings = listings.filter(
     (item) => item.publisherId === session?.user?.id,
   );
@@ -372,6 +378,27 @@ const filtered = listings.filter((item) => {
     if (item.type === "listing") return "Ver producto";
     return "Ver detalle";
   }
+
+  // Poll notifications every 6 seconds to show updates in near-real-time
+  useEffect(() => {
+    let mounted = true
+    async function fetchNotes() {
+      try {
+        const res = await fetch('/api/notifications')
+        if (!res.ok) return
+        const data: Notification[] = await res.json()
+        if (mounted) setNotificationsState(data)
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchNotes()
+    const id = setInterval(fetchNotes, 6000)
+    return () => {
+      mounted = false
+      clearInterval(id)
+    }
+  }, [])
 
   return (
     <main className="min-h-svh bg-background text-foreground">
@@ -428,6 +455,14 @@ const filtered = listings.filter((item) => {
             >
               Mis anuncios
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/dashboard/orders')}
+            >
+              Mis pedidos
+            </Button>
           </nav>
           <div className="flex items-center gap-2">
             <Popover>
@@ -479,8 +514,8 @@ const filtered = listings.filter((item) => {
                   </Button>
                 </PopoverHeader>
                 <div className="max-h-[min(28rem,60svh)] overflow-y-auto p-2">
-                  {notifications.length ? (
-                    notifications.slice(0, 8).map((item) => (
+                  {notificationsState.length ? (
+                    notificationsState.slice(0, 8).map((item) => (
                       <article
                         key={item.id}
                         className={`rounded-lg p-3 ${item.readAt ? "opacity-60" : "bg-primary/5"}`}
@@ -643,6 +678,19 @@ const filtered = listings.filter((item) => {
                         }}
                       >
                         Calificar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          setOrderListing(details);
+                          setOrderQuantity(1);
+                          setOrderPhone((session?.user as any)?.phone ?? '');
+                          setOrderNote('');
+                          setOrderOpen(true);
+                        }}
+                      >
+                        Solicitar pedido
                       </Button>
                       <Button
                         type="button"
@@ -848,6 +896,73 @@ const filtered = listings.filter((item) => {
               </TabsContent>
             </Tabs>
           ) : null}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={orderOpen} onOpenChange={(v) => !v && setOrderOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Solicitar pedido</DialogTitle>
+            <p className="text-sm text-muted-foreground">Confirma los datos de tu pedido</p>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              startTransition(async () => {
+                try {
+                  if (!orderListing) throw new Error('Publicación inválida')
+                  const res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      listingId: orderListing.id,
+                      quantity: orderQuantity,
+                      buyerPhone: orderPhone,
+                      buyerNote: orderNote,
+                    }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) throw new Error(data?.error || 'Error al crear pedido')
+                  setOrderOpen(false)
+                  toast.success('Pedido enviado al vendedor')
+                  try {
+                    const r2 = await fetch('/api/notifications')
+                    if (r2.ok) {
+                      const notes: Notification[] = await r2.json()
+                      setNotificationsState(notes)
+                    }
+                  } catch (e) {
+                    // ignore
+                  }
+                  router.refresh()
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Error')
+                }
+              })
+            }}
+          >
+            <div className="grid gap-3">
+              <div>
+                <Label>Cantidad</Label>
+                <Input type="number" min={1} value={orderQuantity} onChange={(e) => setOrderQuantity(Math.max(1, Number(e.target.value || 1)))} />
+              </div>
+              <div>
+                <Label>Teléfono / WhatsApp</Label>
+                <Input value={orderPhone} onChange={(e) => setOrderPhone(e.target.value)} required />
+              </div>
+              <div>
+                <Label>Nota (opcional)</Label>
+                <Textarea value={orderNote} onChange={(e) => setOrderNote(e.target.value)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="font-semibold">S/ {orderListing ? (Number(orderListing.price) * orderQuantity).toFixed(2) : '0.00'}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={pending}>Confirmar Pedido</Button>
+                <Button type="button" variant="ghost" onClick={() => setOrderOpen(false)} disabled={pending}>Cancelar</Button>
+              </div>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
       <Dialog
@@ -1200,6 +1315,14 @@ const filtered = listings.filter((item) => {
           >
             Mis anuncios
           </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/dashboard/orders')}
+            >
+              Mis pedidos
+            </Button>
         </div>
         <section className="flex flex-col gap-6 rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-8">
           <div className="flex flex-col gap-3">
@@ -1544,7 +1667,7 @@ const filtered = listings.filter((item) => {
                   </p>
                   <p className="text-3xl font-black text-primary">
                     {
-                      notifications.filter((item) => item.type === "listing")
+                        notificationsState.filter((item) => item.type === "listing")
                         .length
                     }
                   </p>
@@ -1681,3 +1804,5 @@ const filtered = listings.filter((item) => {
     </main>
   );
 }
+
+
