@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, integer } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -73,7 +73,7 @@ export const review = pgTable('review', {
   listingId: text('listingId').notNull(),
   userId: text('userId').notNull(),
   authorId: text('authorId'),
-  rating: text('rating').notNull(),
+  rating: integer('rating').notNull(),
   comment: text('comment'),
   response: text('response'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
