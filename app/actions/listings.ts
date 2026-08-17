@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { listing, user } from '@/lib/db/schema'
+import { listing, user, favorite} from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -112,4 +112,23 @@ export async function getListings() {
     .orderBy(listing.createdAt)
 
   return rows.map((row) => ({ ...row, publisherName: row.publisherName ?? 'Estudiante' }))
+}
+export async function getFavoriteListingIds(userid: string){
+  const rows = await db
+  .select({
+      id: listing.id,
+      title: listing.title,
+      description: listing.description,
+      category: listing.category,
+      price: listing.price,
+      location: listing.location,
+      imagePath: listing.imagePath,
+      status: listing.status,
+      createdAt: listing.createdAt,
+    })
+    .from(favorite)
+    .innerJoin(listing, eq(favorite.listingId, listing.id))
+    .where(eq(favorite.userId, userid))
+
+  return rows;
 }
