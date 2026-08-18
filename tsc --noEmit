@@ -1,0 +1,28 @@
+                                                                 Tabla «public.order_ticket»
+   Columna   |            Tipo             | Ordenamiento | Nulable  |         Por omisión         | Almacenamiento | Compresión | Estadísticas | Descripción 
+-------------+-----------------------------+--------------+----------+-----------------------------+----------------+------------+--------------+-------------
+ id          | text                        |              | not null |                             | extended       |            |              | 
+ listingId   | text                        |              | not null |                             | extended       |            |              | 
+ buyerId     | text                        |              | not null |                             | extended       |            |              | 
+ sellerId    | text                        |              | not null |                             | extended       |            |              | 
+ quantity    | integer                     |              | not null | 1                           | plain          |            |              | 
+ totalAmount | numeric(10,2)               |              |          |                             | main           |            |              | 
+ buyerPhone  | text                        |              | not null |                             | extended       |            |              | 
+ buyerNote   | text                        |              |          |                             | extended       |            |              | 
+ status      | order_status_old            |              | not null | 'PENDING'::order_status_old | plain          |            |              | 
+ createdAt   | timestamp without time zone |              | not null | now()                       | plain          |            |              | 
+ updatedAt   | timestamp without time zone |              | not null | now()                       | plain          |            |              | 
+Índices:
+    "order_ticket_pkey" PRIMARY KEY, btree (id)
+Restricción not-null:
+    "order_ticket_id_not_null" NOT NULL "id"
+    "order_ticket_listingId_not_null" NOT NULL "listingId"
+    "order_ticket_buyerId_not_null" NOT NULL "buyerId"
+    "order_ticket_sellerId_not_null" NOT NULL "sellerId"
+    "order_ticket_quantity_not_null" NOT NULL "quantity"
+    "order_ticket_buyerPhone_not_null" NOT NULL "buyerPhone"
+    "order_ticket_status_not_null" NOT NULL "status"
+    "order_ticket_createdAt_not_null" NOT NULL "createdAt"
+    "order_ticket_updatedAt_not_null" NOT NULL "updatedAt"
+Método de acceso: heap
+

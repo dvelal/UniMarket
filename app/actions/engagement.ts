@@ -30,7 +30,7 @@ export async function addReview(listingId: string, rating: number, comment: stri
   const previous = await db.select({ id: review.id }).from(review).where(and(eq(review.listingId, listingId), eq(review.userId, user.id))).limit(1)
   if (previous.length) throw new Error('Ya has dejado una reseña para esta publicación. Puedes editarla desde Reseñas.')
   const reviewId = crypto.randomUUID()
-  await db.insert(review).values({ id: reviewId, listingId, userId: user.id, authorId: user.id, rating: String(rating), comment: comment.trim().slice(0, 500) })
+  await db.insert(review).values({ id: reviewId, listingId, userId: user.id, authorId: user.id, rating: rating, comment: comment.trim().slice(0, 500) })
   await db.insert(notification).values({ id: crypto.randomUUID(), userId: product[0].ownerId, type: 'review', title: 'Nueva reseña', message: `${user.name ?? 'Un estudiante'} calificó ${product[0].title}.`, listingId, reviewId })
   revalidatePath('/')
 }
@@ -46,7 +46,7 @@ export async function getEngagement(listingIds: string[], userId: string) {
 export async function updateReview(reviewId: string, rating: number, comment: string) {
   const current = await currentUser()
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error('La calificación debe estar entre 1 y 5 estrellas.')
-  const updated = await db.update(review).set({ rating: String(rating), comment: comment.trim().slice(0, 500) || null }).where(and(eq(review.id, reviewId), or(eq(review.authorId, current.id), eq(review.userId, current.id)))).returning({ id: review.id })
+  const updated = await db.update(review).set({ rating: rating, comment: comment.trim().slice(0, 500) || null }).where(and(eq(review.id, reviewId), or(eq(review.authorId, current.id), eq(review.userId, current.id)))).returning({ id: review.id })
   if (!updated.length) throw new Error('No puedes editar esta reseña.')
   revalidatePath('/')
 }

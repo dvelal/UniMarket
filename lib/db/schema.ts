@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, numeric, integer, pgEnum } from 'drizzle-orm/pg-core'
 
 // --- Better Auth required tables -------------------------------------------
 // Column names are camelCase to match Better Auth's defaults. Do not rename.
@@ -7,6 +7,7 @@ export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
+  phone: text('phone'),
   emailVerified: boolean('emailVerified').notNull().default(false),
   image: text('image'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
@@ -73,7 +74,7 @@ export const review = pgTable('review', {
   listingId: text('listingId').notNull(),
   userId: text('userId').notNull(),
   authorId: text('authorId'),
-  rating: text('rating').notNull(),
+  rating: integer('rating').notNull(),
   comment: text('comment'),
   response: text('response'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
@@ -105,6 +106,22 @@ export const listing = pgTable('listing', {
   serviceStart: text('serviceStart').notNull().default('09:00'),
   serviceEnd: text('serviceEnd').notNull().default('18:00'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
+})
+
+export const order_status = pgEnum('order_status', ['PENDING_CONFIRMATION', 'CONFIRMED', 'DELIVERED', 'CANCELLED'])
+
+export const order_ticket = pgTable('order_ticket', {
+  id: text('id').primaryKey(),
+  listingId: text('listingId').notNull(),
+  buyerId: text('buyerId').notNull(),
+  sellerId: text('sellerId').notNull(),
+  quantity: integer('quantity').notNull().default(1),
+  totalAmount: numeric('totalAmount', { precision: 10, scale: 2 }),
+  buyerPhone: text('buyerPhone').notNull(),
+  buyerNote: text('buyerNote'),
+  status: order_status('status').notNull().default('PENDING_CONFIRMATION'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })
 
 // Example:
