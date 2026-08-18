@@ -7,7 +7,17 @@ import { useRouter } from 'next/navigation'
 
 type ActionStatus = 'CONFIRMED' | 'DELIVERED' | 'CANCELLED'
 
-export default function OrderActionButtons({ ticketId, primaryStatus, primaryLabel }: { ticketId: string; primaryStatus: ActionStatus; primaryLabel: string }) {
+export default function OrderActionButtons({
+  ticketId,
+  primaryStatus,
+  primaryLabel,
+  cancelLabel = 'Cancelar',
+}: {
+  ticketId: string
+  primaryStatus: ActionStatus
+  primaryLabel: string
+  cancelLabel?: string
+}) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -32,7 +42,7 @@ export default function OrderActionButtons({ ticketId, primaryStatus, primaryLab
   return (
     <>
       <Button onClick={() => updateStatus(primaryStatus)} disabled={pending}>{primaryLabel}</Button>
-      <Button variant="destructive" onClick={() => updateStatus('CANCELLED')} disabled={pending}>Cancelar</Button>
+      <Button variant="destructive" onClick={() => updateStatus('CANCELLED')} disabled={pending}>{cancelLabel}</Button>
     </>
   )
 }

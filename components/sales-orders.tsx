@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import OrderActionButtons from '@/components/order-action-buttons'
 
-type Ticket = {
+type SalesTicket = {
   id: string
   listingId: string
   listingTitle: string | null
@@ -37,11 +37,8 @@ function normalizeWaNumber(phone?: string | null) {
   return digits
 }
 
-export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ticket[]; buyerRows: Ticket[] }) {
-  const [mode, setMode] = useState<'seller' | 'buyer'>('seller')
+export default function SalesOrders({ rows }: { rows: SalesTicket[] }) {
   const [status, setStatus] = useState<string>('PENDING_CONFIRMATION')
-
-  const rows = mode === 'seller' ? sellerRows : buyerRows
 
   const filteredRows = useMemo(
     () =>
@@ -53,23 +50,6 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('seller')}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === 'seller' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-800'}`}
-        >
-          Vendedor
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('buyer')}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === 'buyer' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-800'}`}
-        >
-          Comprador
-        </button>
-      </div>
-
       <div className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {
           const tabCount = rows.filter((row) => row.status === tab.key).length
@@ -88,7 +68,7 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
       </div>
 
       {filteredRows.length === 0 ? (
-        <p className="text-muted-foreground">No hay pedidos en esta vista.</p>
+        <p className="text-muted-foreground">No hay ventas en esta vista.</p>
       ) : (
         <div className="space-y-3">
           {filteredRows.map((t) => (
@@ -102,7 +82,7 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
                 <div>
                   <h3 className="text-lg font-medium">{t.listingTitle}</h3>
                   <p className="text-sm text-muted-foreground">Categoría: {t.listingCategory ?? 'Sin categoría'} · Cantidad: {t.quantity} · Total S/ {t.totalAmount}</p>
-                  <p className="mt-2 text-sm">{mode === 'seller' ? 'Comprador' : 'Vendedor'}: {t.buyerName ?? 'Estudiante'}</p>
+                  <p className="mt-2 text-sm">Comprador: {t.buyerName ?? 'Estudiante'}</p>
                   {t.buyerNote ? <p className="text-sm text-muted-foreground">Nota: {t.buyerNote}</p> : null}
                 </div>
               </div>
@@ -116,15 +96,13 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
                   })() : <span className="text-sm text-muted-foreground">Sin contacto</span>}
                 </div>
 
-                {mode === 'seller' ? (
-                  <div className="flex gap-2">
-                    {t.status === 'PENDING_CONFIRMATION' ? (
-                      <OrderActionButtons ticketId={t.id} primaryStatus="CONFIRMED" primaryLabel="Confirmar pedido" cancelLabel="Rechazar" />
-                    ) : t.status === 'CONFIRMED' ? (
-                      <OrderActionButtons ticketId={t.id} primaryStatus="DELIVERED" primaryLabel="Marcar como entregado" />
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="flex gap-2">
+                  {t.status === 'PENDING_CONFIRMATION' ? (
+                    <OrderActionButtons ticketId={t.id} primaryStatus="CONFIRMED" primaryLabel="Confirmar pedido" cancelLabel="Rechazar" />
+                  ) : t.status === 'CONFIRMED' ? (
+                    <OrderActionButtons ticketId={t.id} primaryStatus="DELIVERED" primaryLabel="Marcar como entregado" />
+                  ) : null}
+                </div>
 
                 <time className="mt-2 block text-xs text-muted-foreground">{new Intl.DateTimeFormat('es-PE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(t.createdAt))}</time>
               </div>

@@ -459,9 +459,17 @@ const filtered = listings.filter((item) => {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/dashboard/orders')}
+              onClick={() => router.push('/dashboard/ventas')}
             >
-              Mis pedidos
+              Mis Ventas
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/dashboard/compras')}
+            >
+              Mis Compras
             </Button>
           </nav>
           <div className="flex items-center gap-2">
@@ -1315,14 +1323,22 @@ const filtered = listings.filter((item) => {
           >
             Mis anuncios
           </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/dashboard/orders')}
-            >
-              Mis pedidos
-            </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard/ventas')}
+          >
+            Mis Ventas
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard/compras')}
+          >
+            Mis Compras
+          </Button>
         </div>
         <section className="flex flex-col gap-6 rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-8">
           <div className="flex flex-col gap-3">

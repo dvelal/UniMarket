@@ -1,9 +1,12 @@
 "use client"
 
 import { useMemo, useState } from 'react'
-import OrderActionButtons from '@/components/order-action-buttons'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { useTransition } from 'react'
 
-type Ticket = {
+type PurchasesTicket = {
   id: string
   listingId: string
   listingTitle: string | null
@@ -12,9 +15,9 @@ type Ticket = {
   quantity: number
   totalAmount: string | number | null
   buyerId: string
-  buyerName: string | null
-  buyerPhone: string | null
-  buyerImage?: string | null
+  sellerName: string | null
+  sellerPhone: string | null
+  sellerImage?: string | null
   buyerNote?: string | null
   status: string
   createdAt: string
@@ -37,11 +40,10 @@ function normalizeWaNumber(phone?: string | null) {
   return digits
 }
 
-export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ticket[]; buyerRows: Ticket[] }) {
-  const [mode, setMode] = useState<'seller' | 'buyer'>('seller')
+export default function PurchasesOrders({ rows }: { rows: PurchasesTicket[] }) {
   const [status, setStatus] = useState<string>('PENDING_CONFIRMATION')
-
-  const rows = mode === 'seller' ? sellerRows : buyerRows
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
 
   const filteredRows = useMemo(
     () =>
@@ -51,25 +53,44 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
     [rows, status],
   )
 
+  async function markAsReceived(ticketId: string) {
+    startTransition(async () => {
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticketId, newStatus: 'DELIVERED' }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || 'Error')
+        toast.success('Pedido marcado como recibido')
+        router.refresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Error')
+      }
+    })
+  }
+
+  async function cancelOrder(ticketId: string) {
+    startTransition(async () => {
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticketId, newStatus: 'CANCELLED' }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || 'Error')
+        toast.success('Pedido cancelado')
+        router.refresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Error')
+      }
+    })
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('seller')}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === 'seller' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-800'}`}
-        >
-          Vendedor
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('buyer')}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium ${mode === 'buyer' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-800'}`}
-        >
-          Comprador
-        </button>
-      </div>
-
       <div className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {
           const tabCount = rows.filter((row) => row.status === tab.key).length
@@ -88,7 +109,7 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
       </div>
 
       {filteredRows.length === 0 ? (
-        <p className="text-muted-foreground">No hay pedidos en esta vista.</p>
+        <p className="text-muted-foreground">No hay compras en esta vista.</p>
       ) : (
         <div className="space-y-3">
           {filteredRows.map((t) => (
@@ -102,29 +123,51 @@ export default function SellerOrders({ sellerRows, buyerRows }: { sellerRows: Ti
                 <div>
                   <h3 className="text-lg font-medium">{t.listingTitle}</h3>
                   <p className="text-sm text-muted-foreground">Categoría: {t.listingCategory ?? 'Sin categoría'} · Cantidad: {t.quantity} · Total S/ {t.totalAmount}</p>
-                  <p className="mt-2 text-sm">{mode === 'seller' ? 'Comprador' : 'Vendedor'}: {t.buyerName ?? 'Estudiante'}</p>
-                  {t.buyerNote ? <p className="text-sm text-muted-foreground">Nota: {t.buyerNote}</p> : null}
+                  <p className="mt-2 text-sm">Vendedor: {t.sellerName ?? 'Estudiante'}</p>
+                  {t.buyerNote ? <p className="text-sm text-muted-foreground">Tu nota: {t.buyerNote}</p> : null}
                 </div>
               </div>
 
               <div className="flex flex-col items-end gap-2">
                 <div className="flex flex-col items-end gap-2">
-                  {t.buyerPhone ? (() => {
-                    const num = normalizeWaNumber(t.buyerPhone)
-                    if (!num) return <span className="text-sm text-muted-foreground">Contacto: {t.buyerPhone}</span>
+                  {t.sellerPhone ? (() => {
+                    const num = normalizeWaNumber(t.sellerPhone)
+                    if (!num) return <span className="text-sm text-muted-foreground">Contacto: {t.sellerPhone}</span>
                     return <a href={`https://wa.me/${num}`} target="_blank" rel="noreferrer" className="rounded-md bg-green-600 px-3 py-1 text-sm font-semibold text-white">WhatsApp</a>
                   })() : <span className="text-sm text-muted-foreground">Sin contacto</span>}
                 </div>
 
-                {mode === 'seller' ? (
-                  <div className="flex gap-2">
-                    {t.status === 'PENDING_CONFIRMATION' ? (
-                      <OrderActionButtons ticketId={t.id} primaryStatus="CONFIRMED" primaryLabel="Confirmar pedido" cancelLabel="Rechazar" />
-                    ) : t.status === 'CONFIRMED' ? (
-                      <OrderActionButtons ticketId={t.id} primaryStatus="DELIVERED" primaryLabel="Marcar como entregado" />
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="flex gap-2">
+                  {t.status === 'PENDING_CONFIRMATION' && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => cancelOrder(t.id)}
+                    >
+                      Cancelar solicitud
+                    </Button>
+                  )}
+                  {t.status === 'CONFIRMED' && (
+                    <Button
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => markAsReceived(t.id)}
+                    >
+                      Marcar como recibido
+                    </Button>
+                  )}
+                  {t.status === 'DELIVERED' && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={pending}
+                      onClick={() => toast.info('Reseña: función por implementar')}
+                    >
+                      Dejar reseña
+                    </Button>
+                  )}
+                </div>
 
                 <time className="mt-2 block text-xs text-muted-foreground">{new Intl.DateTimeFormat('es-PE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(t.createdAt))}</time>
               </div>
